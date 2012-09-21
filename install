@@ -1,0 +1,212 @@
+#!/bin/sh
+#
+#Created by Kevin K. 
+# Any questions or issues please email me at 'kevink@linux.com'
+#
+##-------------------------------------------------------------------------------
+##This program is free software: you can redistribute it and/or modify
+##it under the terms of the GNU General Public License as published by
+##the Free Software Foundation, either version 3 of the License, or
+##(at your option) any later version.
+##
+##This program is distributed in the hope that it will be useful,
+##but WITHOUT ANY WARRANTY; without even the implied warranty of
+##MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##GNU General Public License for more details.
+##
+##You should have received a copy of the GNU General Public License
+##along with this program.  If not, see <http://www.gnu.org/licenses/>.
+##-------------------------------------------------------------------------------
+#
+# Nagios install Script
+#
+# This script is to have the 
+# install be automated
+# 
+# Usage:
+#	--list
+#	Is a file with the needed links for 
+#	the program to use for wget
+#
+#	--options
+# 	Is a file with the list of desired 
+# 	configure options
+#
+#
+
+
+PROGRAM=`basename $0`
+VERSION='0.1.46 [BETA]'
+usage()
+{
+	echo "USAGE: $PROGRAM --list FILE --options OPTIONS_FILE"
+}
+usage_exit()
+{
+	usage
+	exit 1
+}
+testing()
+{
+	if test ! -f $1
+		then
+			printf "ERROR: $1 is not a file!\n"
+			usage_exit
+	fi
+} 
+download()
+{
+wget --input-file=$list
+}
+detar()
+{
+	tar xzf nagios-3*.tar.gz
+	tar xzf nagios-p*.tar.gz
+	tar xzf nrpe*
+}
+
+while test $# -gt 0
+	do
+	case $1 in
+	-l | --list )
+	list=~+/$2
+	shift
+	;;
+	-o | --options )
+	options=~+/$2
+	shift
+	;;
+	-h | --help )
+	usage
+	exit 0
+	;;
+	-v | --verison )
+	printf "$PROGRAM Verision: $VERSION\n"
+	usage
+	exit 0
+	;;
+	-* )
+	printf "ERROR: $1 is not an yet an option\n"
+	usage_exit
+	;;
+	*)
+	break
+	;;
+	esac
+	shift
+done
+
+# A root check is need right now... This is planed to change
+#	This is mainly for restarting services.. 
+# With is instruction I would sugest that you have --with-nagios-user=
+# 	set up in your OPTIONS file
+#
+if [ `id -u` = 0 ] 
+	then
+	echo "We will now begin"
+	else
+	echo "Please rerun as root."
+	exit 1
+fi
+#
+# This a simple series of checks to make sure that everything is in order
+# before we begin the real work
+if [ "$list" != "" ]
+	then
+		testing $list
+	else
+	printf "ERROR --list Option is needed to download the correct version\n"
+	usage_exit
+fi
+if [ "$options" != "" ]
+	then
+	testing $option
+	path=`grep prefix $options | sed 's!^.*=!!'`
+#	if [ "$?" == "0" ]
+#		then
+#		read -p "Please enter the given path [/path/to/dir] : " path #This will be fixed later
+#	fi
+	read -t 30 -p "Please enter the admin username [Default: nagiosadmin]: " admin
+fi
+if [ "$path" == "" ]
+ then
+  path="/usr/local/"
+fi
+if [ "$admin" = "" ]
+	then 
+	admin="nagiosadmin"
+fi
+
+# The password can be changed later
+# I did not allow for there to be a default password
+# because i am against such things
+printf "Please enter the admin password [NO SPACES]: " 
+read -s adminpasswd
+
+mkdir ~+/tmp
+cd tmp
+download
+detar
+cd nagios/
+./configure `tr '\n' ' ' < $options`
+make all
+make install
+make install-init
+make install-config
+make install-commandmode
+printf "Now is a good time to edit $path/nagios/etc/objects/contacts.cfg\n"
+printf "Please open another terminal if that is your choice.\n"
+printf "Please press [ENTER] once you are done.\n"
+read -s null
+make install-webconf
+
+if test -d "$path/nagios/etc/"
+	then
+	echo "So far so good."
+	else
+	mkdir -p $path/nagios/etc/
+fi  
+htpasswd -bc $path/nagios/etc/htpasswd.users $admin $adminpasswd
+service httpd restart
+cd ../nagios-plugin*
+
+read -t 30 -p "We need to turn SElinux off for this. You may add the proper rules later if you wish. [PRESS ENTER]" null
+setenforce 0
+
+if [ "$options" != "" ]
+	then
+	$user="grep 'nagios-user' $options"
+	$group="grep 'nagios-group' $options"
+fi
+if [ "$user" = "" ]
+	then 
+	user="--with-nagios-user=nagios"
+fi
+
+if [ "$group" = "" ]
+	then 
+	group="--with-nagios-group=nagios"
+fi
+# Now we will work on the nagios-plugins
+./configure $user $group
+make
+make install
+chkconfig --del nagios
+chkconfig --add nagios
+chkconfig --list | grep nagios
+service nagios start
+cd ../
+
+# Now for the localhost NRPE
+	cd nrpe*
+	./configure $user $group
+	make
+	make install
+	# creating a check for the NRPE
+printf "define command{\n\
+\tcommand_name check_nrpe\n\
+\tcommand_line \$USER1$/check_nrpe  -H \$HOSTADDRESS -c \$ARG1$\n\
+}" >> $path/etc/objects/commands.cfg 
+cd ../../
+rm -rf tmp
+exit 0
