@@ -122,10 +122,6 @@ if [ "$options" != "" ]
 	then
 	testing $option
 	path=`grep prefix $options | sed 's!^.*=!!'`
-#	if [ "$?" == "0" ]
-#		then
-#		read -p "Please enter the given path [/path/to/dir] : " path #This will be fixed later
-#	fi
 	read -t 30 -p "Please enter the admin username [Default: nagiosadmin]: " admin
 fi
 if [ "$path" == "" ]
