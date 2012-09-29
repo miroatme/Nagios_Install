@@ -64,6 +64,11 @@ detar()
 	tar xzf nagios-p*.tar.gz
 	tar xzf nrpe*
 }
+manual_mode()
+{
+	printf "This feature has not been completed.\n/
+if you would like to help, or have suggestions please email me!\n"
+}
 
 while test $# -gt 0
 	do
@@ -78,6 +83,14 @@ while test $# -gt 0
 	;;
 	-h | --help )
 	usage
+	exit 0
+	;;
+	-P | --password | --passwd )
+	adminpasswd=$2
+	shift
+	;;
+	-m | --manual )
+	manual_mode
 	exit 0
 	;;
 	-v | --verison )
@@ -136,8 +149,12 @@ fi
 # The password can be changed later
 # I did not allow for there to be a default password
 # because i am against such things
-printf "Please enter the admin password [NO SPACES]: " 
-read -s adminpasswd
+if [ "$adminpasswd" = "" ]
+	then
+
+	printf "Please enter the admin password [NO SPACES]: " 
+	read -s adminpasswd
+fi
 
 mkdir ~+/tmp
 cd tmp
