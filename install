@@ -36,7 +36,7 @@
 
 
 PROGRAM=`basename $0`
-VERSION='0.1.46 [BETA]'
+VERSION='0.1.73 [BETA]'
 usage()
 {
 	echo "USAGE: $PROGRAM --list FILE --options OPTIONS_FILE"
@@ -128,13 +128,14 @@ if [ "$list" != "" ]
 	then
 		testing $list
 	else
-	printf "ERROR --list Option is needed to download the correct version\n"
+	printf "ERROR --list FILE is needed to download the correct version\n"
 	usage_exit
 fi
 if [ "$options" != "" ]
 	then
 	testing $option
 	path=`grep prefix $options | sed 's!^.*=!!'`
+	admin=`grep "commanduser" $options | sed 's!^.*=!!'`
 	read -t 30 -p "Please enter the admin username [Default: nagiosadmin]: " admin
 fi
 if [ "$path" == "" ]
@@ -151,7 +152,6 @@ fi
 # because i am against such things
 if [ "$adminpasswd" = "" ]
 	then
-
 	printf "Please enter the admin password [NO SPACES]: " 
 	read -s adminpasswd
 fi
@@ -212,14 +212,15 @@ cd ../
 
 # Now for the localhost NRPE
 	cd nrpe*
-	./configure $user $group
+	./configure $user $group $path
 	make
 	make install
 	# creating a check for the NRPE
 printf "define command{\n\
 \tcommand_name check_nrpe\n\
 \tcommand_line \$USER1$/check_nrpe  -H \$HOSTADDRESS -c \$ARG1$\n\
-}" >> $path/etc/objects/commands.cfg 
+}" >> $path/etc/objects/commands.cfg
+iptables -I RH-Firewall-1-INPUT -p tcp -m tcp --dport 5666 -j ACCEPT  
 cd ../../
 rm -rf tmp
 exit 0
