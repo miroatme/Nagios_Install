@@ -74,11 +74,11 @@ while test $# -gt 0
 	do
 	case $1 in
 	-l | --list )
-	list=~+/$2
+	list=$2
 	shift
 	;;
 	-o | --options )
-	options=~+/$2
+	options=$2
 	shift
 	;;
 	-h | --help )
