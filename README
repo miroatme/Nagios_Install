@@ -23,14 +23,14 @@ gd-devel
 openssl-devel
 xinted
 
-#___________________What You Need To do First_______________
+___________________What You Need To do First_______________
 Create the user ( and possiblely group) that you will be 
 running the program with. 
 DEFAULT: nagios ( for user and group)
 DEFAULT: nagiosadmin ( for website)
 
 
-#_____________________About the Script______________________
+_____________________About the Script______________________
 You will need to have a list of the latest tarballs 
 links for the script to download. This can be done from the Nagios site
 or from you own hosts. 
