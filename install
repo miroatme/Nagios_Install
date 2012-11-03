@@ -64,7 +64,7 @@ detar()
 	tar xzf nagios-p*.tar.gz
 	tar xzf nrpe*
 }
-manual_mode()
+configure()
 {
 	printf "This feature has not been completed.\n/
 if you would like to help, or have suggestions please email me!\n"
@@ -89,8 +89,8 @@ while test $# -gt 0
 	adminpasswd=$2
 	shift
 	;;
-	-m | --manual )
-	manual_mode
+	-c | --configure )
+	configure
 	exit 0
 	;;
 	-v | --verison )
@@ -188,8 +188,8 @@ setenforce 0
 
 if [ "$options" != "" ]
 	then
-	$user="grep 'nagios-user' $options"
-	$group="grep 'nagios-group' $options"
+	user="grep 'nagios-user' $options"
+	group="grep 'nagios-group' $options"
 fi
 if [ "$user" = "" ]
 	then 
